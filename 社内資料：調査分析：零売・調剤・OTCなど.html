@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【和光 社内戦略ダッシュボード】地域医療セーフティネット構想・零売分析統合ポータル</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#F0F9FF',
+                            100: '#E0F2FE',
+                            600: '#0284C7',
+                            700: '#0369A1',
+                            800: '#075985',
+                            900: '#0C4A6E',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        body { background-color: #F8F6F0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 520px; margin: auto; height: 260px; }
+        @media (min-width: 768px) { .chart-container { height: 300px; } }
+        .highlight-target { animation: highlightAnim 2.2s ease-out; }
+        @keyframes highlightAnim {
+            0% { background-color: #FEF3C7; transform: scale(1.01); }
+            100% { background-color: transparent; transform: scale(1); }
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #F1F5F9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Top Sticky Navigation Bar -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span class="bg-sky-800 text-white text-xs font-bold px-2.5 py-1 rounded">和光 地域医療戦略</span>
+                    <h1 class="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
+                        地域薬局セーフティネット構想・零売分析統合ダッシュボード
+                    </h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="switchTab('tab-fullreport')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <span>📖 レポート本稿全文を読む</span>
+                    </button>
+                    <button onclick="switchTab('tab-sources')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 border border-gray-300">
+                        <span>🔗 出典・一次情報リンク集</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global KPI Strip -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3 pt-3 border-t border-gray-100 text-xs">
+                <div class="bg-sky-50/70 p-2 rounded border border-sky-200 flex justify-between items-center cursor-pointer hover:bg-sky-100/70 transition" onclick="jumpToReport('sec-report-1')">
+                    <div>
+                        <span class="text-gray-500 text-[10px] block">非処方箋 医療用医薬品</span>
+                        <span class="text-sm sm:text-base font-bold text-sky-900">約 7,000 品目</span>
+                    </div>
+                    <span class="text-[10px] text-sky-700 bg-sky-200/60 px-1 py-0.5 rounded">第1章 ➔</span>
+                </div>
+                <div class="bg-rose-50/70 p-2 rounded border border-rose-200 flex justify-between items-center cursor-pointer hover:bg-rose-100/70 transition" onclick="jumpToReport('sec-report-3')">
+                    <div>
+                        <span class="text-gray-500 text-[10px] block">改正薬機法（原則禁止施行）</span>
+                        <span class="text-sm sm:text-base font-bold text-rose-700">2027年5月20日</span>
+                    </div>
+                    <span class="text-[10px] text-rose-700 bg-rose-200/60 px-1 py-0.5 rounded">第3章 ➔</span>
+                </div>
+                <div class="bg-amber-50/70 p-2 rounded border border-amber-200 flex justify-between items-center cursor-pointer hover:bg-amber-100/70 transition" onclick="jumpToReport('sec-report-3-4')">
+                    <div>
+                        <span class="text-gray-500 text-[10px] block">緊急つなぎ調剤の本質</span>
+                        <span class="text-sm sm:text-base font-bold text-amber-800">即時交付＋事後報告</span>
+                    </div>
+                    <span class="text-[10px] text-amber-700 bg-amber-200/60 px-1 py-0.5 rounded">法意 ➔</span>
+                </div>
+                <div class="bg-purple-50/70 p-2 rounded border border-purple-200 flex justify-between items-center cursor-pointer hover:bg-purple-100/70 transition" onclick="jumpToReport('sec-report-8-4')">
+                    <div>
+                        <span class="text-gray-500 text-[10px] block">動物・ペット医療対応</span>
+                        <span class="text-sm sm:text-base font-bold text-purple-800">本店（六本松）先行</span>
+                    </div>
+                    <span class="text-[10px] text-purple-700 bg-purple-200/60 px-1 py-0.5 rounded">第8章 ➔</span>
+                </div>
+                <div class="bg-emerald-50/70 p-2 rounded border border-emerald-200 flex justify-between items-center cursor-pointer hover:bg-emerald-100/70 transition" onclick="jumpToReport('sec-report-4')">
+                    <div>
+                        <span class="text-gray-500 text-[10px] block">プロ間融通 vs 社販</span>
+                        <span class="text-sm sm:text-base font-bold text-emerald-800">プロ適法 / 社販違法</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-700 bg-emerald-200/60 px-1 py-0.5 rounded">第4章 ➔</span>
+                </div>
+            </div>
+
+            <!-- Tab Menu -->
+            <nav class="flex space-x-2 mt-3 overflow-x-auto pb-1 text-xs font-semibold custom-scroll">
+                <button id="btn-dashboard" onclick="switchTab('tab-dashboard')" class="tab-btn py-1.5 px-3 rounded-md border-b-2 border-sky-600 text-sky-700 whitespace-nowrap bg-sky-50/50">
+                    1. 和光モデル＆戦略サマリー
+                </button>
+                <button id="btn-scenarios" onclick="switchTab('tab-scenarios')" class="tab-btn py-1.5 px-3 rounded-md border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap">
+                    2. 現場20事例シミュレーター
+                </button>
+                <button id="btn-critique" onclick="switchTab('tab-critique')" class="tab-btn py-1.5 px-3 rounded-md border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap">
+                    3. 構造的矛盾と司法・規制疑義
+                </button>
+                <button id="btn-protrade" onclick="switchTab('tab-protrade')" class="tab-btn py-1.5 px-3 rounded-md border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap">
+                    4. プロ間販売＆社内零売規制
+                </button>
+                <button id="btn-fullreport" onclick="switchTab('tab-fullreport')" class="tab-btn py-1.5 px-3 rounded-md border-b-2 border-transparent text-blue-700 hover:text-blue-900 whitespace-nowrap bg-blue-50/40">
+                    📖 5. レポート本稿全文（全10章）
+                </button>
+                <button id="btn-sources" onclick="switchTab('tab-sources')" class="tab-btn py-1.5 px-3 rounded-md border-b-2 border-transparent text-gray-600 hover:text-gray-900 whitespace-nowrap">
+                    🔗 6. 出典・一次情報リンク集
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: 和光モデル＆戦略サマリー (DASHBOARD) -->
+        <!-- ========================================== -->
+        <section id="tab-dashboard" class="tab-content block space-y-6">
+
+            <!-- Mission Banner -->
+            <div class="bg-gradient-to-r from-sky-900 via-slate-800 to-indigo-950 text-white p-5 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="space-y-1.5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="bg-sky-500/30 text-sky-200 text-[10px] font-semibold px-2 py-0.5 rounded border border-sky-400/30">福岡・地域包括ケア構想</span>
+                        <span class="bg-amber-400/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-300/30">公衆衛生の使命 ＆ 収益技術の追求</span>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-bold">和光「4層統合型・地域医療セーフティネット」モデル</h2>
+                    <p class="text-xs text-gray-300 leading-relaxed max-w-3xl">
+                        未来のための研鑽は単なる労務論ではなく「公衆衛生の向上と社会的価値の向上」という地域企業の使命です。価値を正当な収益・対価へ変換する技術を高め、雇用維持と持続可能性を確固たるものとします。
+                    </p>
+                </div>
+                <button onclick="jumpToReport('sec-report-8')" class="bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-3.5 py-2 rounded-lg whitespace-nowrap shadow transition">
+                    第8章 戦略ビジョンへ ➔
+                </button>
+            </div>
+
+            <!-- The 4-Layer Architecture Visual Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                <!-- Layer 4: Animal & Nutrition -->
+                <div class="bg-white p-4 rounded-xl border-2 border-purple-300 shadow-sm flex flex-col justify-between hover:border-purple-500 transition relative">
+                    <span class="absolute -top-2.5 right-3 bg-purple-700 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">本店（六本松）先行実証</span>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded">第 4 層</span>
+                            <span class="text-[10px] text-gray-400">生活・共生支援</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-gray-900">健康・介護・栄養・動物ペット共生</h3>
+                        <p class="text-xs text-gray-600 leading-relaxed">
+                            ・医療用濃厚流動食・サルコペニア対策<br>
+                            ・**和光薬局 本店先行**で動物薬許可取得<br>
+                            ・動物病院連携、人獣共通薬小分け調剤<br>
+                            ・療法食・ペットサプリの店頭・取り寄せ
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
+                        <span class="text-[10px] text-purple-700 font-semibold">六本松から全店へ</span>
+                        <button onclick="jumpToReport('sec-report-8-4')" class="text-sky-600 hover:underline font-bold text-[11px]">詳細を読む ➔</button>
+                    </div>
+                </div>
+
+                <!-- Layer 3: 薬剤師外来 & Intelligence Service -->
+                <div class="bg-white p-4 rounded-xl border-2 border-sky-600 shadow-sm flex flex-col justify-between relative">
+                    <span class="absolute -top-2.5 right-3 bg-sky-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">相談マネタイズ＆能動化</span>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-0.5 rounded">第 3 層</span>
+                            <span class="text-[10px] text-gray-400">セルフケア＆トリアージ</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-sky-950">店頭「薬剤師外来（仮称）」</h3>
+                        <p class="text-xs text-gray-600 leading-relaxed">
+                            ・**受動的待ちから能動的声掛けへ**行動変容<br>
+                            ・**選んであげるインテリジェンスの有償化**<br>
+                            ・美容：スキンケア、ハーブ薬草、ダイエット<br>
+                            ・健康：便秘、睡眠、排尿、活力、栄養補助
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
+                        <span class="text-[10px] text-sky-700 font-semibold">知見提供のサービス化</span>
+                        <button onclick="jumpToReport('sec-report-8-3')" class="text-sky-600 hover:underline font-bold text-[11px]">構想を読む ➔</button>
+                    </div>
+                </div>
+
+                <!-- Layer 2: PBPM & Pro-Trade -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between hover:border-sky-400 transition">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">第 2 層</span>
+                            <span class="text-[10px] text-gray-400">緊急時・プロ間供給</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-gray-900">緊急つなぎ調剤＆プロ間融通</h3>
+                        <p class="text-xs text-gray-600 leading-relaxed">
+                            ・主治医不通時の**薬剤師即時交付＋事後報告**<br>
+                            ・残薬切れ時の最大3日分つなぎ供給<br>
+                            ・医師・歯科医師・獣医師への小分け販売
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
+                        <span class="text-[10px] text-amber-700 font-semibold">事前契約不要・事後連携</span>
+                        <button onclick="jumpToReport('sec-report-3-4')" class="text-sky-600 hover:underline font-bold text-[11px]">法意確認 ➔</button>
+                    </div>
+                </div>
+
+                <!-- Layer 1: Core Pharmacy -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between hover:border-sky-400 transition">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">第 1 層</span>
+                            <span class="text-[10px] text-gray-400">基盤医療機能</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-gray-900">保険調剤・地域包括ケア連携</h3>
+                        <p class="text-xs text-gray-600 leading-relaxed">
+                            ・個人クリニック門前での高精度調剤<br>
+                            ・在宅訪問服薬指導・残薬管理<br>
+                            ・福岡市内8店舗の厚い地域信頼基盤
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
+                        <span class="text-[10px] text-emerald-700 font-semibold">福岡市中心に展開</span>
+                        <button onclick="jumpToReport('sec-report-8-1')" class="text-sky-600 hover:underline font-bold text-[11px]">詳細を読む ➔</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Non-Profit Safety Net Highlight Banner -->
+            <div class="bg-amber-50/80 border-2 border-amber-300 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">基盤横断・非収益機能</span>
+                        <h3 class="text-sm font-bold text-amber-950">独居・老老介護世帯の生活困りごと「寄り添い・つなぐ」公衆衛生セーフティネット</h3>
+                    </div>
+                    <p class="text-xs text-amber-900 leading-relaxed max-w-4xl">
+                        病気や体調変化を契機とする介護負担増大・生活崩壊の悪循環を店頭で早期発見。薬を売ることにとどまらず、地域包括支援センターや福祉窓口、ケアマネジャーへ直接つなぎます。
+                    </p>
+                </div>
+                <button onclick="jumpToReport('sec-report-8-5')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap shadow transition">
+                    セーフティネット詳細 ➔
+                </button>
+            </div>
+
+            <!-- Two Column Chart & Timeline -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Left: Chart.js Drug Classification -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="text-sm font-bold text-gray-900">■ 医薬品分類と零売対象（約7,000品目）の構造</h3>
+                            <button onclick="jumpToReport('sec-report-1')" class="text-xs text-sky-600 hover:underline font-bold">第1章へ ➔</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-4">医療用医薬品20,000品目中、非処方箋医薬品は約35%。一般販売は2027年原則禁止となりますが、プロ間融通は適法です。</p>
+                        <div class="chart-container">
+                            <canvas id="drugClassificationChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-gray-50 p-2.5 rounded-lg border border-gray-200 text-xs space-y-1">
+                        <div class="flex justify-between text-red-700"><span>・処方箋医薬品 (~13,000品目)</span><span class="font-bold">法49条で無処方販売禁止</span></div>
+                        <div class="flex justify-between text-sky-800"><span>・非処方箋医療用医薬品 (~7,000品目)</span><span class="font-bold">2027年5月より法36条の3で原則禁止</span></div>
+                        <div class="flex justify-between text-gray-600"><span>・OTC・要指導医薬品 (~12,000品目)</span><span class="font-bold">薬剤師外来等で能動トリアージ</span></div>
+                    </div>
+                </div>
+
+                <!-- Right: Legal Timeline & 2026 Ruling Keypoints -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-bold text-gray-900">■ 制度タイムラインと2026年9月東京地裁判決の批判的検証</h3>
+                            <button onclick="jumpToReport('sec-report-3')" class="text-xs text-sky-600 hover:underline font-bold">第3章へ ➔</button>
+                        </div>
+                        <div class="space-y-3 text-xs">
+                            <div class="border-l-2 border-gray-300 pl-3">
+                                <span class="font-bold text-gray-700 block">2005年4月〜2022年8月：行政通知による運用</span>
+                                <span class="text-gray-500">処方箋原則・やむを得ない場合のみ。法律上の直接罰則がなく専業零売チェーンが都市部に出現。</span>
+                            </div>
+                            <div class="border-l-2 border-amber-500 pl-3 bg-amber-50/50 p-2 rounded-r">
+                                <span class="font-bold text-amber-900 block">2026年9月18日：東京地裁判決（原告薬局敗訴）</span>
+                                <span class="text-amber-800 leading-relaxed block mt-0.5">
+                                    「処方箋なしでの医療用医薬品の選択・交付は**【医行為】（医師法17条）**に該当する」と判示。現場の動的セーフティネットの必要性を捨象し、概念法学・静的演繹に終始した硬直的判断。
+                                </span>
+                                <a href="https://www.morihamada.com/ja/insights/newsletters/147411" target="_blank" class="text-blue-600 underline font-semibold text-[11px] mt-1 inline-block">判決分析（森・濱田松本法律事務所） ↗</a>
+                            </div>
+                            <div class="border-l-2 border-rose-500 pl-3 bg-rose-50/50 p-2 rounded-r">
+                                <span class="font-bold text-rose-900 block">2027年5月20日：改正薬機法 第36条の3第2項 施行</span>
+                                <span class="text-rose-800 leading-relaxed block mt-0.5">
+                                    一般消費者への販売が法律上原則禁止。例外は省令の「やむを得ない場合（即時交付＋事後報告）」および「薬剤師等へのプロ間販売」のみ。
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-2.5 bg-sky-50 rounded-lg border border-sky-200 text-xs text-sky-950 flex justify-between items-center">
+                        <span>国会附帯決議：国民の医薬品アクセス確保・営業継続配慮が要請</span>
+                        <button onclick="jumpToReport('sec-report-3-4')" class="font-bold text-sky-700 underline text-[11px]">附帯決議解説へ ➔</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: 現場20事例シミュレーター (SCENARIOS) -->
+        <!-- ========================================== -->
+        <section id="tab-scenarios" class="tab-content hidden space-y-6">
+
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                        <span>🔍</span> 現場における想定事例（20選）トリアージ・シミュレーター
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        店頭で直面する20シチュエーションを分類。各事例の判断基準・リスクと、和光の「薬剤師外来」での実践対応を確認できます。
+                    </p>
+                </div>
+                <button onclick="jumpToReport('sec-report-5')" class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold px-3 py-2 rounded-lg border transition">
+                    本稿第5章のマトリクス詳細へ ➔
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between text-xs">
+                <div class="flex flex-wrap gap-1.5 w-full md:w-auto">
+                    <button onclick="filterScenarios('all')" class="filter-btn bg-gray-800 text-white px-2.5 py-1.5 rounded font-medium">全20事例</button>
+                    <button onclick="filterScenarios('cat-std')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-2.5 py-1.5 rounded font-medium">標準ケース (1-6)</button>
+                    <button onclick="filterScenarios('cat-bound')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-2.5 py-1.5 rounded font-medium">現場境界ケース (7-13)</button>
+                    <button onclick="filterScenarios('cat-daily')" class="filter-btn bg-gray-100 text-gray-700 hover:bg-gray-200 px-2.5 py-1.5 rounded font-medium">日常・違法ケース (14-20)</button>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <select id="statusFilter" onchange="applyFilters()" class="border border-gray-300 rounded p-1.5 bg-white text-gray-700">
+                        <option value="all">判定で絞り込み (すべて)</option>
+                        <option value="適">適 (販売可)</option>
+                        <option value="条件付適">条件付適 (慎重対応)</option>
+                        <option value="不適">不適 (OTC優先)</option>
+                        <option value="完全違法">完全違法・不適</option>
+                    </select>
+                    <input type="text" id="scenarioSearch" onkeyup="applyFilters()" placeholder="キーワード検索..." class="border border-gray-300 rounded p-1.5 w-full md:w-48 focus:ring-1 focus:ring-sky-500">
+                </div>
+            </div>
+
+            <!-- Scenario Cards / Table -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-700">
+                        <thead class="bg-gray-50 text-gray-800 uppercase font-semibold border-b border-gray-200">
+                            <tr>
+                                <th class="py-3 px-3 w-12 text-center">No</th>
+                                <th class="py-3 px-4 w-1/3">想定ケース概要</th>
+                                <th class="py-3 px-3 w-28">分類</th>
+                                <th class="py-3 px-3 w-24 text-center">判定</th>
+                                <th class="py-3 px-4">解説・実務上の注意点・法制度リスク</th>
+                                <th class="py-3 px-3 w-20 text-center">リンク</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scenarioTableBody" class="divide-y divide-gray-200">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: 構造的矛盾と司法・規制疑義 (CRITIQUE) -->
+        <!-- ========================================== -->
+        <section id="tab-critique" class="tab-content hidden space-y-6">
+
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                        <span>⚖️</span> 医療機関との構造的矛盾と司法の「静的演繹主義（概念法学）」批判
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        医療機関の自費美容物販が温存される一方で、地域薬局の対面トリアージが排除され、大手資本へ集約される大いなる政策矛盾を分析します。
+                    </p>
+                </div>
+                <button onclick="jumpToReport('sec-report-7')" class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold px-3 py-2 rounded-lg border transition">
+                    第7章 批判的考察へ ➔
+                </button>
+            </div>
+
+            <!-- Comparison Table: Clinic vs Pharmacy -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-3">
+                <h3 class="text-sm font-bold text-gray-900">■ 制度的ダブルスタンダード（医療機関の自費処方 vs 調剤薬局の零売）</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-200 p-2.5 font-semibold text-gray-700 w-1/5">比較項目</th>
+                                <th class="border border-gray-200 p-2.5 font-semibold text-sky-900 bg-sky-50 w-2/5">🏥 医療機関の自由診療（美容内服・GLP-1等）</th>
+                                <th class="border border-gray-200 p-2.5 font-semibold text-gray-900 bg-gray-50 w-2/5">💊 調剤薬局における対面零売</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="border border-gray-200 p-2.5 font-bold bg-gray-50">法的枠組み</td>
+                                <td class="border border-gray-200 p-2.5 bg-sky-50/30">医師法22条（院内処方）＝<span class="font-bold text-sky-800">合法な医療行為</span></td>
+                                <td class="border border-gray-200 p-2.5 text-rose-700">処方箋なし販売＝<span class="font-bold">実質的な医行為侵害（原則禁止）</span></td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-200 p-2.5 font-bold bg-gray-50">診察の実態</td>
+                                <td class="border border-gray-200 p-2.5 bg-sky-50/30">オンライン等の形式的問診（数分）で窓口や郵送で定期交付</td>
+                                <td class="border border-gray-200 p-2.5">薬剤師が対面で薬歴・健康状態を確認し調剤室で分割</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-200 p-2.5 font-bold bg-gray-50">広告宣伝</td>
+                                <td class="border border-gray-200 p-2.5 bg-sky-50/30">医療広告ガイドラインの限定解除を満たせばHP・SNSで訴求可能</td>
+                                <td class="border border-gray-200 p-2.5 text-rose-700 font-bold">一般人向け広告・価格表の掲載は全面禁止</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-200 p-2.5 font-bold bg-gray-50">収益構造</td>
+                                <td class="border border-gray-200 p-2.5 bg-sky-50/30">自由価格設定による高利幅（主要自費収益源）</td>
+                                <td class="border border-gray-200 p-2.5">原則として薄利な自費販売</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-200 p-2.5 font-bold bg-gray-50">行政処分リスク</td>
+                                <td class="border border-gray-200 p-2.5 bg-sky-50/30">「医師が診察した」外形があれば無診察処方立証が困難</td>
+                                <td class="border border-gray-200 p-2.5 text-rose-700">「処方箋なし」という外形事実だけで即座に指導・処罰可能</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Deep Critique 3 Columns -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="text-xs font-bold text-rose-700 block">批判的論点 ①</span>
+                    <h3 class="text-sm font-bold text-gray-900">懲罰的一律規制への転化</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        一部事業者のインモラルな美容マーケティングや受診不要広告への反発から、法律レベル（第36条の3第2項）での一律原則禁止へと強行されました。長年地域で真面目につなぎ役を果たしてきた薬局の裁量まで巻き添えで奪われました。
+                    </p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="text-xs font-bold text-amber-700 block">批判的論点 ②</span>
+                    <h3 class="text-sm font-bold text-gray-900">司法の形式主義と不作為の健康被害</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        裁判所は動的な現場セーフティネットの必要性を考慮せず、「医行為」の形式的演繹に終始。全てを禁止した結果、「薬が出ずに患者が重症化する不作為の健康被害」や専門職の防衛的萎縮という副作用を自ら生み出しています。
+                    </p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="text-xs font-bold text-sky-800 block">批判的論点 ③</span>
+                    <h3 class="text-sm font-bold text-gray-900">流通資本への集約化という矛盾</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        効率化・集約化の名のもとで、流通物流を握るメガドラッグストアや巨大調剤チェーンにインフラを再編させる経済誘導が進んでいます。地域のきめ細かな対人支援が排除される構図は地域包括ケアの理念と矛盾します。
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: 医師・獣医師等プロ間販売＆社内零売規制 (PROTRADE) -->
+        <!-- ========================================== -->
+        <section id="tab-protrade" class="tab-content hidden space-y-6">
+
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                        <span>🤝</span> 薬局から医師・歯科医師・獣医師への販売（適法） vs スタッフ・開設者への社内販売（違法）
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        一般向け零売禁止後も医療関係専門職への調剤・備蓄用販売は適法ですが、自己・家族服用目的のスタッフ社販は完全NGとなります。
+                    </p>
+                </div>
+                <button onclick="jumpToReport('sec-report-4')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition">
+                    第4章 プロ間規制詳細へ ➔
+                </button>
+            </div>
+
+            <!-- Law Card & Severe Warning -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-emerald-50/60 border border-emerald-300 p-4 rounded-xl text-xs space-y-2">
+                    <span class="font-bold text-emerald-900 text-sm block">📜 改正薬機法 第36条の3第2項ただし書第1号（プロ間販売は適法）</span>
+                    <p class="text-emerald-950 leading-relaxed">
+                        「薬局開設者は、処方箋の交付を受けた者以外の者に指定薬局医薬品を販売・授与してはならない。**ただし、薬剤師等に販売し、又は授与するときはこの限りでない**」。<br>
+                        ※相手方の医師・獣医師免許等を確認し、販売記録を**2年間保存**することで緊急小分け供給が適法に認められます。
+                    </p>
+                </div>
+
+                <div class="bg-rose-50/70 border-2 border-rose-400 p-4 rounded-xl text-xs space-y-2">
+                    <span class="font-bold text-rose-900 text-sm block">⚠️ スタッフ・開設者自身への無処方社販は完全NG（業務停止処分リスク）</span>
+                    <p class="text-rose-950 leading-relaxed">
+                        「薬局スタッフだから」「開設者自身だから」という社内零売は一切認められません。服用目的の購入者は職務管理者ではなく**「一人の患者・需要者」**であり、一般消費者と同一です。<br>
+                        過去に職員への無処方社販で**「業務停止命令」**が出た薬局実例が多数あります。体調不良時はOTC社販または正規受診が必須です。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pro Trade Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="font-bold text-sky-800 block text-sm">① 医師・診療所への緊急小分け供給</span>
+                    <p class="text-gray-600 leading-relaxed">
+                        ・院内緊急処置薬（アドレナリン等）や急患対応用の院内調剤在庫の補充。<br>
+                        ・卸からの納品が間に合わない夜間・休日の緊急融通。<br>
+                        ・相手方の医師免許・診療所開設届を確認し、販売記録を調製。
+                    </p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="font-bold text-sky-800 block text-sm">② 歯科医師・歯科医院への供給</span>
+                    <p class="text-gray-600 leading-relaxed">
+                        ・歯科診療で使用する局所麻酔薬や院内投薬用の消炎鎮痛薬の供給。<br>
+                        ・歯科医師免許証および診療所確認。歯科業務範囲内の医薬品に限る。
+                    </p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="font-bold text-purple-800 block text-sm">③ 獣医師・動物病院への人用医薬品の供給</span>
+                    <p class="text-gray-600 leading-relaxed">
+                        ・動物治療に必要な人用医療用医薬品の小分け供給（適法）。<br>
+                        ・獣医師免許証・飼育動物診療施設確認。<br>
+                        ・※専ら動物用医薬品を取り扱う場合は、別途「動物用医薬品販売業許可」が必要。
+                    </p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <span class="font-bold text-amber-800 block text-sm">④ 遵守事項と「無許可卸売」リスクの回避</span>
+                    <p class="text-gray-600 leading-relaxed">
+                        ・品名・数量・日時・譲受人氏名・住所・販売薬剤師名を記録し**2年間保存**。<br>
+                        ・日常的・小分けの緊急融通は適法だが、業として定期・大量に卸す行為は「卸売販売業の無許可営業（法第24条第1項違反）」となるため厳禁。
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: レポート本稿全文 (FULL REPORT) -->
+        <!-- ========================================== -->
+        <section id="tab-fullreport" class="tab-content hidden space-y-6">
+
+            <!-- Report Header -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4 mb-4">
+                    <div>
+                        <span class="bg-blue-100 text-blue-900 text-xs font-bold px-2.5 py-1 rounded">社内検討・戦略報告書</span>
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                            零売（処方箋医薬品以外の医療用医薬品販売）をめぐる現況分析、構造的課題、および地域企業「和光」における事業・制度改革アイデアの検討素材
+                        </h2>
+                        <span class="text-xs text-gray-400 mt-1 block">作成：株式会社和光薬品 経営戦略・薬事検討チーム / 2026年10月改訂版</span>
+                    </div>
+                    <button onclick="switchTab('tab-dashboard')" class="bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs font-bold px-3 py-2 rounded-lg transition whitespace-nowrap">
+                        ⬅ ダッシュボードへ戻る
+                    </button>
+                </div>
+
+                <!-- Fast Anchor Jump Links -->
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <span class="text-xs font-bold text-gray-700 block mb-1.5">目次クイックジャンプ：</span>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <a href="#sec-report-summary" class="text-sky-700 hover:underline font-semibold">サマリー</a>・
+                        <a href="#sec-report-1" class="text-sky-700 hover:underline">第1章 基本構造</a>・
+                        <a href="#sec-report-2" class="text-sky-700 hover:underline">第2章 現行販売条件</a>・
+                        <a href="#sec-report-3" class="text-sky-700 hover:underline">第3章 裁判＆法改正</a>・
+                        <a href="#sec-report-4" class="text-sky-700 hover:underline">第4章 プロ間＆社販</a>・
+                        <a href="#sec-report-5" class="text-sky-700 hover:underline">第5章 20事例</a>・
+                        <a href="#sec-report-6" class="text-sky-700 hover:underline">第6章 医療機関矛盾</a>・
+                        <a href="#sec-report-7" class="text-sky-700 hover:underline">第7章 批判的考察</a>・
+                        <a href="#sec-report-8" class="text-sky-700 hover:underline font-bold text-sky-900">第8章 和光4層モデル</a>・
+                        <a href="#sec-report-9" class="text-sky-700 hover:underline">第9章 アクションプラン</a>・
+                        <a href="#sec-report-10" class="text-sky-700 hover:underline">第10章 論点</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Report Body Container with Styled Prose -->
+            <div class="bg-white p-6 sm:p-10 rounded-xl border border-gray-200 shadow-sm space-y-10 text-sm text-gray-800 leading-relaxed">
+
+                <!-- Summary Section -->
+                <div id="sec-report-summary" class="space-y-3 border-b pb-8">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">■</span> 【エグゼクティブ・サマリー】公衆衛生の使命と企業の持続可能性
+                    </h3>
+                    <p>
+                        本資料は、処方箋なしで一部の医療用医薬品を販売するいわゆる「零売」について、現行の法規制、2026年9月の最新司法判断、2027年5月施行の改正薬機法、現場の具体的想定事例（20選）、および医療機関（自由診療）との構造的矛盾を網羅的に整理・考察した社内検討レポートである。
+                    </p>
+                    <p>
+                        本稿で未来への活動をひらくための検討を進めるにあたり、その根底にあるスタンスは「単なる和光薬品の従業者としての企業防衛や業務改善」にとどまるものではない。薬事法制や薬剤師法が掲げる本源的使命である「公衆衛生の向上及び増進に寄与し、地域住民の生命・健康生活を守る」という絶対的使命を背負った地域医療企業としての活動である。  
+                        したがって、未来のための新たな研鑽や取り組みは、「従業員だから会社のために勉強すべき」という矮小化された労務論ではなく、「公衆衛生の向上と社会的価値の向上を実現するための専門職・企業としての必然的責務」として位置づけられる。
+                    </p>
+                    <p>
+                        さらに、この社会的使命を果たし続けるためには、「業としての正当な収益向上（経済的持続可能性）」が不可欠である。公衆衛生に資する価値を創造しながら収益を上げられないとすれば、それは環境や制度のせいにするのではなく、「真の価値を社会に認知させ、適法に対価へ結びつける『取り組む技術』が組織として不足している」と厳しく自覚しなければならない。収益が確保できなければ、雇用を維持することも、企業としての永続性を保つことも不可能となり、結果として地域住民を守るセーフティネットそのものが消滅してしまうからである。
+                    </p>
+                </div>
+
+                <!-- Chapter 1 -->
+                <div id="sec-report-1" class="space-y-4 border-b pb-8">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span class="text-sky-600">第1章</span> 零売の基本構造と「制度的二重構造」の変遷
+                        </h3>
+                        <a href="https://www.mhlw.go.jp/content/11121000/001141740.pdf" target="_blank" class="text-xs text-blue-600 underline font-semibold">厚労省 検討会資料 ↗</a>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mt-2">(1) 薬機法上の医薬品分類体系</h4>
+                    <p>
+                        薬機法上、医薬品は「薬局医薬品」「要指導医薬品」「一般用医薬品」に分類される。医療において用いられる薬局医薬品（約20,000品目）のうち、医師の厳格な指示を要する約13,000品目が「処方箋医薬品」に指定され、薬機法第49条第1項により正当な理由のない無処方販売が法律上禁止されている。
+                    </p>
+                    <p>
+                        これに対し、残余の約7,000品目（処方箋医薬品以外の医療用医薬品）には、漢方製剤、ビタミン剤、解熱鎮痛薬、ステロイド外用剤などが含まれるが、法文上に直接の無処方販売禁止規定が設けられていなかった。
+                    </p>
+                    <h4 class="font-bold text-gray-800 mt-2">(2) 行政通知による運用と「制度的二重構造」の形成</h4>
+                    <p>
+                        厚生労働省は通知（平成17年通知、平成26年薬食発0318第4号）により「処方箋に基づく交付が原則であり、販売はやむを得ない場合に限る」との指導を行ってきたが、法律の文言と行政指導との乖離（制度的二重構造）を利用し、処方箋なし販売を専門に行う専業零売薬局が都市部に出現した。
+                    </p>
+                </div>
+
+                <!-- Chapter 2 -->
+                <div id="sec-report-2" class="space-y-4 border-b pb-8">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span class="text-sky-600">第2章</span> 現行制度における販売条件と厳格化された運用規準
+                        </h3>
+                        <a href="https://www.mhlw.go.jp/content/11121000/001061771.pdf" target="_blank" class="text-xs text-blue-600 underline font-semibold">厚労省 取扱い通知 ↗</a>
+                    </div>
+                    <ul class="list-disc list-inside space-y-1.5 text-gray-700">
+                        <li><strong>「やむを得ない場合」の確認とOTC代替の優先：</strong>購入希望者の病状・服用歴を対面で聴取し、OTC医薬品で代替可能かを第一に検討する。OTCで代替可能な場合の零売は不適切とされる。</li>
+                        <li><strong>受診勧奨の義務付け：</strong>医師・歯科医師の診断を受けるよう促す「受診勧奨」を行い、受診回避を目的とした販売は認められない。</li>
+                        <li><strong>数量の極小化（最小限度）：</strong>受診までの数日分（必要最小限）に限定。反復販売やまとめ買い、美容等の適応外使用は厳禁。</li>
+                        <li><strong>調剤室での分割と対面販売原則：</strong>調剤室で薬剤師自身が分割し、使用本人に対して対面で販売。郵送やネット通販は禁止。</li>
+                        <li><strong>記録の2年間保存・薬歴管理：</strong>販売日時、品名、数量、薬剤師名、薬局連絡先を記載した書面を2年間保存し、薬歴に妥当性理由を記載。</li>
+                        <li><strong>一般人向け広告の全面禁止：</strong>「処方箋なしで買える」等の広告や、自社サイトへの品名・価格掲載は全面禁止。</li>
+                    </ul>
+                </div>
+
+                <!-- Chapter 3 -->
+                <div id="sec-report-3" class="space-y-4 border-b pb-8">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span class="text-sky-600">第3章</span> 司法判断の限界と立法動向：概念法学への批判的検証
+                        </h3>
+                        <a href="https://www.morihamada.com/ja/insights/newsletters/147411" target="_blank" class="text-xs text-blue-600 underline font-semibold">東京地裁判決・法改正分析 ↗</a>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mt-2">(1) 2026年9月18日東京地裁判決の法理と限界</h4>
+                    <p>
+                        零売薬局3社が国を訴えた地位確認訴訟において、東京地方裁判所は原告の請求を却下・棄却した。判決は「薬局医薬品は作用が著しくリスクが高い。疾病程度を判断し、副作用リスクを踏まえて薬剤による治療法を決定する行為は、高度な医学的判断を要する**『医行為』（医師法第17条）**に実質的に該当する」と判示。処方箋なし販売は特別の定めがない限り許容されないとした。
+                    </p>
+                    <h4 class="font-bold text-gray-800 mt-2">(2) 司法議論における「静的演繹主義（概念法学）」の病理</h4>
+                    <p>
+                        本来、臨床・公衆衛生の現場は動的な不確実性の連続であり、主治医不在や夜間・休日の残薬切れにおいて、薬局が現場判断で間隙を埋めるセーフティネットの役割は不可欠である。しかし司法は、そうした動的必要性を一切考慮せず、「医行為」という抽象概念の形式的演繹に終始した。この結果、「薬を出さずに患者が重症化する不作為の健康被害」や現場専門職の防衛的萎縮という予見し得ない制度的副作用を司法自らが生み出している。
+                    </p>
+                    <h4 class="font-bold text-gray-800 mt-2">(3) 改正薬機法（令和7年法律第37号）と2027年5月20日施行</h4>
+                    <p>
+                        2025年5月21日公布の改正薬機法により第36条の3第2項が新設され、2027年5月20日（令和8年政令第209号）に施行される。正当な理由のない一般消費者への無処方販売が法律レベルで明確に原則禁止・罰則化される。
+                    </p>
+                    <h4 id="sec-report-3-4" class="font-bold text-gray-800 mt-2">(4) 緊急つなぎ調剤の真の法意：事前PBPM不要の「即時交付＋事後報告」</h4>
+                    <p>
+                        省令で規定される「やむを得ない場合」において、一部で「医師との事前包括プロトコール（PBPM）契約が必須である」という誤解があるが、法律が予定している本質は**「主治医への連絡が不通・休診等の不測の事態において、薬剤師が専門的判断で数日分を交付し、事後に処方医へFAX等で情報提供（事後報告）を行う」**ことで適法に完結する。事前契約がないことを理由に患者の緊急アクセスを拒否する必要は法的に全くない。
+                    </p>
+                </div>
+
+                <!-- Chapter 4 -->
+                <div id="sec-report-4" class="space-y-4 border-b pb-8">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span class="text-sky-600">第4章</span> 薬局から医師・歯科医師・獣医師への販売規制（適法） vs スタッフ・開設者自身への社内零売（違法）
+                        </h3>
+                        <a href="https://lawplayer.com/jp/article/335AC0000000145/36_3" target="_blank" class="text-xs text-blue-600 underline font-semibold">薬機法第36条の3 条文 ↗</a>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mt-2">(1) 「薬剤師等」に対するプロ間販売は処方箋不要（適法）</h4>
+                    <p>
+                        改正薬機法第36条の3第2項ただし書第1号により、医師、歯科医師、獣医師、他の薬局開設者（薬剤師）等の「薬剤師等」に対する調剤・備蓄用の販売は、処方箋交付要件の適用除外（適法）とされている。相手方の身元・資格確認を行い、品名・数量・日時の記録を**2年間保存**することが義務付けられる（日常的・小分けの緊急融通は適法だが、業として定期大量に卸す行為は無許可卸売として厳禁）。
+                    </p>
+                    <h4 class="font-bold text-gray-800 mt-2">(2) スタッフ・薬局開設者自身への無処方社販は完全NG（違法）</h4>
+                    <p>
+                        勤務薬剤師やスタッフ、または薬局開設者自身であっても、自己または家族の服用目的で購入する行為は、法的には職務管理者ではなく**「一人の患者・需要者（エンドユーザー）」**としての地位になる。したがって、一般消費者への無処方販売と全く同一であり、処方箋なしで自局の薬を販売・授与・自家消費することは明確な薬機法違反となる。
+                    </p>
+                    <p>
+                        過去にも職員への処方箋なし社販によって**「業務停止命令」**が出た薬局実例が存在する。スタッフの体調不良時には、OTC医薬品の社販か、正規の医療機関受診・処方箋調剤以外に道はない。
+                    </p>
+                </div>
+
+                <!-- Chapter 5 -->
+                <div id="sec-report-5" class="space-y-4 border-b pb-8">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">第5章</span> 現場における想定事例（20選）の適否・リスク分析マトリクス
+                    </h3>
+                    <p>
+                        現場で直面する20事例の判定要約：大規模災害、出張携行薬紛失、クリニック臨時休診、公的備蓄要請、船舶常備薬、処方漢方薬の残薬切れ（OTCなし）などは「適」または「条件付適」として最小限の供給が許容される。一方、ヒルドイド（OTC容易入手）、花粉症アレグラ（スイッチOTCあり）、胃痛の自己判断、小児の急性発熱、ステロイド点眼薬、美肌セット、湿布まとめ買い、代理購入、ネット通販、処方箋医薬品（降圧薬・睡眠薬・抗生物質等）は「不適」または「完全違法」となる。
+                    </p>
+                </div>
+
+                <!-- Chapter 6 -->
+                <div id="sec-report-6" class="space-y-4 border-b pb-8">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">第6章</span> 医療機関（自由診療・美容）との構造的矛盾と社会的影響の分析
+                    </h3>
+                    <p>
+                        医療機関がオンライン等の形式的な問診のみで美容内服薬（トラネキサム酸等）やGLP-1痩身薬を受付や郵送で販売する行為は、医師法第22条（院内処方）を盾に「合法な医療行為」として巨額の自費市場を形成している。他方、薬局が対面で服薬歴を確認して行う販売は「医行為侵害」として厳罰化された。この制度的ダブルスタンダードに対し、現場の薬剤師は強い不条理感を抱いている。
+                    </p>
+                </div>
+
+                <!-- Chapter 7 -->
+                <div id="sec-report-7" class="space-y-4 border-b pb-8">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">第7章</span> 【批判的考察】懲罰的規制強化の疑義と大いなる政策矛盾
+                    </h3>
+                    <p>
+                        一部事業者のインモラルな行動への社会的制裁が、過度な一律規制へと転化し、公衆衛生の要である地域薬局の「薬学的トリアージ機能」までが排除された。その深層には、物流合理性を優先し流通メガドラッグストアや巨大調剤チェーンに医療インフラを集約化させようとする経済政策の思惑が存在し、真の地域包括ケアシステムの理念と真っ向から矛盾している。
+                    </p>
+                </div>
+
+                <!-- Chapter 8 -->
+                <div id="sec-report-8" class="space-y-4 border-b pb-8">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">第8章</span> 【和光の戦略ビジョン】地域企業としての公衆衛生向上と高収益化の統合
+                    </h3>
+                    <p>
+                        福岡の地域企業「和光」は、旧来の零売にしがみつくのではなく、以下の4層統合モデルおよび基盤横断セーフティネットを構築する：
+                    </p>
+                    <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li id="sec-report-8-1"><strong>第1層（基盤保険医療）：</strong>福岡市内8店舗での高い調剤品質、在宅訪問服薬指導、かかりつけ機能の深化。</li>
+                        <li><strong>第2層（緊急アクセス・プロ間供給）：</strong>主治医不通時の即時交付＋事後報告による緊急つなぎ調剤、および近隣医師・獣医師等への適法な小分け供給。</li>
+                        <li id="sec-report-8-3"><strong>第3層（店頭「薬剤師外来」とインテリジェンスサービス）：</strong>
+                            「受動的相談待ち」を排し**「能動的な声掛け」**へ行動変容。生活者に個別最適な選択肢を「選んであげる」知見提供そのものをマネタイズするインテリジェンスサービス化を確立。美容（スキンケア・ハーブ・ダイエット）や健康維持（便秘・睡眠・排尿・活力・疾患別栄養補助）を体系的に提案する。
+                        </li>
+                        <li id="sec-report-8-4"><strong>第4層（生活・共生支援：和光薬局 本店先行の動物医療）：</strong>
+                            福岡市中央区六本松の「和光薬局 本店」を先行パイロット店舗として、動物用医薬品販売業許可を取得。人獣共通薬の緊急調剤、動物用医薬品・療法食の店頭・取り寄せ販売、動物病院連携を実証し、各店へ展開する。
+                        </li>
+                        <li id="sec-report-8-5"><strong>基盤横断（非収益セーフティネット機能）：</strong>
+                            独居高齢者や老老介護世帯の体調・生活変化を店頭で察知し、重症化の悪循環を防ぐため地域包括支援センターや福祉窓口、ケアマネジャーへ直接つなぐ公衆衛生トリアージを果たす。
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Chapter 9 -->
+                <div id="sec-report-9" class="space-y-4 border-b pb-8">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">第9章</span> 和光が現場で直ちに取り組めるロードマップと実践的アクションプラン
+                    </h3>
+                    <p>
+                        <strong>短期アクション（〜2027年5月）：</strong>
+                    </p>
+                    <ul class="list-disc list-inside space-y-1.5 text-gray-700">
+                        <li><strong>店頭「薬剤師外来（仮称）」の立ち上げ：</strong>能動的声掛けロールプレイングの実施、美容・健康維持の専門棚整備、相談マネタイズのテスト。</li>
+                        <li><strong>和光薬局 本店（六本松）の動物ケアパイロット：</strong>動物用医薬品販売業許可申請、近隣動物病院との連携、療法食取り寄せ開始。</li>
+                        <li>門前医師との緊急時「即時交付＋事後報告連携」の合意・確認。</li>
+                        <li>近隣診療所・動物病院との「緊急時医薬品小分け供給ネットワーク」構築。</li>
+                        <li>独居・老老介護SOSトリアージ手順と地域包括支援センターホットラインの整備。</li>
+                    </ul>
+                    <p class="mt-2">
+                        <strong>中長期アクション（2027年5月以降）：</strong>改正薬機法適合型つなぎ調剤の地域定着、動物ケアモデルの全店展開、防音個室オンライン診療ブースの実装。
+                    </p>
+                </div>
+
+                <!-- Chapter 10 -->
+                <div id="sec-report-10" class="space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="text-sky-600">第10章</span> 総括とディスカッションの論点
+                    </h3>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+                        <span class="font-bold text-gray-800 block text-xs">【社内戦略会議における4つの検討アジェンダ】</span>
+                        <ol class="list-decimal list-inside text-xs space-y-1.5 text-gray-700">
+                            <li><strong>「薬剤師外来（仮称）」とインテリジェンスサービスの技術的確立：</strong>店頭での能動的声掛けの定着と、知見提供有償化のビジネスモデルをどう具現化するか？</li>
+                            <li><strong>和光薬局本店（六本松）の動物医療パイロット：</strong>動物病院連携と動物用医薬品販売業許可取得の具体的ロードマップ。</li>
+                            <li><strong>緊急つなぎ調剤の事後報告フローの確立：</strong>門前クリニックに対し、「患者のために即時交付し、速やかに事後報告する」適法運用をどう説明・共有しておくか？</li>
+                            <li><strong>生活困りごと連携の仕組み化：</strong>独居・老老介護世帯の異変察知と行政連携シートの運用手順をどう現場へ浸透させるか？</li>
+                        </ol>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 6: 出典・一次情報リンク集 (SOURCES) -->
+        <!-- ========================================== -->
+        <section id="tab-sources" class="tab-content hidden space-y-6">
+
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                        <span>🔗</span> 一次情報・公的公表資料・判例・法令リンク集
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        本レポートの根拠となった公的通知、法律条文、司法判決、国会審議、および関連組織の公式Webサイト一覧です。
+                    </p>
+                </div>
+                <button onclick="switchTab('tab-dashboard')" class="bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs font-bold px-3 py-2 rounded-lg transition">
+                    ⬅ ダッシュボードへ戻る
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+
+                <!-- Category 1: 厚労省公的資料 -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <span class="font-bold text-sky-800 block text-sm border-b pb-1.5">🏛️ 厚生労働省 公式通知・検討会資料</span>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.mhlw.go.jp/content/11121000/001061771.pdf" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                薬局医薬品の取扱いについて（平成26年通知＆令和4年再周知通知） ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">販売記録2年保存、受診勧奨、広告禁止等の運用基準が示された行政資料</span>
+                        </li>
+                        <li>
+                            <a href="https://www.mhlw.go.jp/content/11121000/001141740.pdf" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                医薬品の販売制度に関する検討会 資料（医薬品区分・正当な理由） ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">7,000品目の区分背景、ステロイド点眼等の安全性懸念が討議された資料</span>
+                        </li>
+                        <li>
+                            <a href="https://www.mhlw.go.jp/content/11121000/001173112.pdf" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                医薬品の販売制度に関する検討会 とりまとめ報告書 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">零売原則禁止と「やむを得ない場合」の法制化が提言された最終とりまとめ</span>
+                        </li>
+                        <li>
+                            <a href="https://www.mhlw.go.jp/content/11121000/001498205.pdf" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                令和7年改正薬機法（令和7年法律第37号）の概要 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">薬局機能強化、調剤外部委託、濫用防止とともに零売原則禁止を定めた法律</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Category 2: 司法・判例・訴訟資料 -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <span class="font-bold text-amber-800 block text-sm border-b pb-1.5">⚖️ 司法判決・訴訟・法律事務所分析</span>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.morihamada.com/ja/insights/newsletters/147411" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                森・濱田松本法律事務所 ニュースレター（2026年9月18日東京地裁判決分析） ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">東京地裁の「医行為」該当性判断、医師法17条との整合性を法的に詳解</span>
+                        </li>
+                        <li>
+                            <a href="https://www.ben54.jp/news/3952" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                弁護士JPニュース：病院行かずに薬買える「零売」の規制認める判決 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">原告3社（長澤薬品・まゆみ薬局・Grand Health）の請求棄却と原告会見の報道</span>
+                        </li>
+                        <li>
+                            <a href="https://www.call4.jp/file/pdf/202505/1fe4a3b1a972bcfd00c441413f8badf4.pdf" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                CALL4 公開訴訟記録：零売訴訟 訴状および原告準備書面 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">通知による営業制限の違法性・憲法22条職業選択の自由に関する主張書面</span>
+                        </li>
+                        <li>
+                            <a href="https://kokkai.ndl.go.jp/simple/detail?minId=121714260X01120250508&spkNum=0" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                国会会議録：参議院厚生労働委員会 改正薬機法 附帯決議 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">国民のアクセス阻害防止・既存薬局の営業継続配慮を求めた附帯決議</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Category 3: 薬機法条文・自治体行政手続き -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <span class="font-bold text-emerald-800 block text-sm border-b pb-1.5">📜 薬機法条文・自治体卸売許可</span>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://lawplayer.com/jp/article/335AC0000000145/36_3" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                薬機法 第36条の3（薬局医薬品の販売に従事する者等）条文解説 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">第2項ただし書第1号「薬剤師等への販売」除外規定の条文体系</span>
+                        </li>
+                        <li>
+                            <a href="https://lawplayer.com/jp/article/335AC0000000145/34" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                薬機法 第24条・第34条（医薬品販売業・卸売販売業の許可要件） ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">業としての無許可卸売販売の禁止と罰則（第84条）の規定</span>
+                        </li>
+                        <li>
+                            <a href="https://www.pref.fukuoka.lg.jp/contents/tetsuduki-oroshishinki.html" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                福岡県庁：医薬品卸売販売業許可申請 手続き案内 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">福岡県内における医薬品販売業・卸売業の開設許可基準</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Category 4: 動物医療・和光薬局関連 -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <span class="font-bold text-purple-800 block text-sm border-b pb-1.5">🐾 動物医療連携・和光薬品公式</span>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.wako-fukuoka.jp/genre/121/1.html" target="_blank" class="text-blue-600 hover:underline font-bold block text-sm">
+                                株式会社和光薬品 公式サイト（店舗・事業案内） ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">福岡市博多区・中央区を中心に展開する株式会社和光薬品の公式企業ポータル</span>
+                        </li>
+                        <li>
+                            <a href="https://jvma-vet.jp/mag/07705/a2.pdf" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                日本獣医師会雑誌：獣医師の調剤行為と愛玩動物看護師の業務制限 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">獣医師法・薬剤師法における動物用調剤の独占業務と薬局連携の基礎資料</span>
+                        </li>
+                        <li>
+                            <a href="https://jvpa.jp/jvpa/?p=14" target="_blank" class="text-blue-600 hover:underline font-semibold block">
+                                日本獣医療経営推進協会：獣医師による医薬品の処方と販売の法的差異 ↗
+                            </a>
+                            <span class="text-gray-500 text-[11px]">診察を伴わない医薬品授与の禁止と医薬品販売業許可の境界</span>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6 mt-12 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>【社内戦略資料】株式会社和光薬品 地域医療・薬事戦略プロジェクト</p>
+            <p class="mt-1 text-[11px] text-gray-400">※本システムは社内ディスカッションおよび戦略立案用の統合素材です。</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // 20 Scenarios Dataset
+        const scenarioData = [
+            { no: 1, title: "大規模災害時に避難所で常用漢方薬・胃腸薬が切れた", catKey: "cat-std", category: "標準ケース", status: "適", desc: "【適：制度の本旨】被災による医療断絶時の健康維持。正当な理由に該当。お薬手帳等で確認の上、数日〜1週間分程度を分割交付。" },
+            { no: 2, title: "出張・旅行先で携行薬（非処方箋薬）を紛失し休日に受診困難", catKey: "cat-std", category: "標準ケース", status: "適", desc: "【適：要件合致】処方歴確認の上、帰宅・受診までの数日分のみ分割販売。同一成分OTCが入手困難であることが条件。" },
+            { no: 3, title: "かかりつけ医が急病・冠婚葬祭等で臨時休診し残薬枯渇", catKey: "cat-std", category: "標準ケース", status: "適", desc: "【適：要件合致】患者側に帰責性のない受診不能。クリニック再開までの最小限（数日分）を交付し事後報告。" },
+            { no: 4, title: "自治体からの防災計画に基づく解熱鎮痛剤等の備蓄要請", catKey: "cat-std", category: "標準ケース", status: "適", desc: "【適：法令上の例外】公的備蓄目的の供給であり通知上の正当理由に該当。" },
+            { no: 5, title: "遠洋航海に出航する船舶への法定常備薬の備え付け", catKey: "cat-std", category: "標準ケース", status: "適", desc: "【適：法令上の例外】船員法施行規則に基づく証明書により合法的に対応。" },
+            { no: 6, title: "処方箋期限切れ（4日経過）＋大型連休で再発行不可", catKey: "cat-std", category: "標準ケース", status: "条件付適", desc: "【慎重対応】本来は処方箋再発行が原則だが、病態悪化を防ぐ緊急避難として最小限交付。連休明けの受診を確約。" },
+            { no: 7, title: "「皮膚科で定期受診しているヒルドイドが切れた」", catKey: "cat-bound", category: "現場境界", status: "不適", desc: "【不適：OTC優先】同一成分・濃度のOTCが容易に入手可能なため零売不可。薬剤師外来にてヘパリン類似物質OTCを提案。" },
+            { no: 8, title: "「花粉症で病院が混んでいるから医療用アレグラが欲しい」", catKey: "cat-bound", category: "現場境界", status: "不適", desc: "【不適：混雑回避】単なる混雑回避は「やむを得ない事情」に該当せず。同一成分スイッチOTC（アレグラFX等）を案内。" },
+            { no: 9, title: "処方漢方薬の残薬枯渇＋近隣店舗に同一処方OTCがない", catKey: "cat-bound", category: "現場境界", status: "適", desc: "【適：要件合致】処方歴あり＋OTC入手困難を満たすため、数日分のみ交付可能。" },
+            { no: 10, title: "「半年前に効いた胃薬（レバミピド）を昨夜からの胃痛に」", catKey: "cat-bound", category: "現場境界", status: "不適", desc: "【不適：医行為侵害】継続服用でなく新症状の自己判断。重大疾患看過リスクが大きいため受診勧奨。" },
+            { no: 11, title: "子どもの夜間の急な発熱に対する小児用解熱細粒の要望", catKey: "cat-bound", category: "現場境界", status: "不適", desc: "【不適：高リスク】小児の急性症状は病態変化が早く危険。小児用OTC案内か夜間救急へ受診勧奨。" },
+            { no: 12, title: "アトピー治療用の強力ステロイド軟膏の週末残薬切れ", catKey: "cat-bound", category: "現場境界", status: "条件付適", desc: "【慎重対応】同等ランクのOTCがなく急激な悪化を防ぐため最小限のみ交付検討。漫然継続は不可。" },
+            { no: 13, title: "アレルギー性結膜炎のステロイド点眼薬（フルメトロン等）", catKey: "cat-bound", category: "現場境界", status: "完全違法", desc: "【危険：眼圧上昇】ステロイド緑内障・感染症リスクがあり医師診断必須。零売は重大な過失となり得る。" },
+            { no: 14, title: "SNSで流行の美肌セット（シナール＋トラネキサム酸）", catKey: "cat-daily", category: "日常・違法", status: "完全違法", desc: "【不適：適応外使用】美容目的の販売は通達違反。薬剤師外来にて適法なスキンケア・機能性食品へトリアージ。" },
+            { no: 15, title: "モーラステープ等の湿布薬のまとめ買い（1ヶ月分等）", catKey: "cat-daily", category: "日常・違法", status: "完全違法", desc: "【不適：過量販売】数日分を超える販売は通知違反。光線過敏症リスクがあり、OTC消炎鎮痛剤を案内。" },
+            { no: 16, title: "「寝込んでいる家族のために代わりに薬を買いたい」", catKey: "cat-daily", category: "日常・違法", status: "不適", desc: "【不適：対面原則違反】薬機法施行規則に基づく「使用者本人への対面」に抵触。代理購入は不可。" },
+            { no: 17, title: "ネット通販・郵送による零売医薬品の購入希望", catKey: "cat-daily", category: "日常・違法", status: "完全違法", desc: "【不適：通信販売禁止】医療用医薬品のネット・郵送販売は薬機法上全面禁止。" },
+            { no: 18, title: "高血圧・糖尿病治療薬（アムロジピン、メトホルミン等）", catKey: "cat-daily", category: "日常・違法", status: "完全違法", desc: "【不適：処方箋医薬品】薬機法第49条違反。いかなる理由でも処方箋なし販売不可（刑事罰対象）。" },
+            { no: 19, title: "不眠に対する睡眠導入剤（デパス、マイスリー等）の要望", catKey: "cat-daily", category: "日常・違法", status: "完全違法", desc: "【不適：麻向法・薬機法違反】向精神薬・処方箋医薬品。乱用防止のため厳罰対象。生活習慣改善や睡眠補助食品を提案。" },
+            { no: 20, title: "感冒症状に対する抗生物質（クラビット等）の単発購入要望", catKey: "cat-daily", category: "日常・違法", status: "完全違法", desc: "【不適：処方箋医薬品】処方箋医薬品であり、AMR（薬剤耐性）の観点からも厳禁。" }
+        ];
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-sky-600', 'text-sky-700', 'bg-sky-50/50');
+                btn.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId.replace('tab-', ''));
+            if(activeBtn) {
+                activeBtn.classList.add('border-sky-600', 'text-sky-700', 'bg-sky-50/50');
+                activeBtn.classList.remove('border-transparent', 'text-gray-600');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Jump Directly to Full Report Anchor
+        function jumpToReport(anchorId) {
+            switchTab('tab-fullreport');
+            setTimeout(() => {
+                const target = document.getElementById(anchorId);
+                if(target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    target.classList.add('highlight-target');
+                    setTimeout(() => target.classList.remove('highlight-target'), 2200);
+                }
+            }, 100);
+        }
+
+        // Render Scenarios Table
+        function renderScenarios(items) {
+            const tbody = document.getElementById('scenarioTableBody');
+            tbody.innerHTML = '';
+            
+            items.forEach(item => {
+                let badge = '';
+                if(item.status === '適') badge = 'bg-emerald-100 text-emerald-800';
+                else if(item.status === '条件付適') badge = 'bg-blue-100 text-blue-800';
+                else if(item.status === '不適') badge = 'bg-amber-100 text-amber-800';
+                else badge = 'bg-rose-100 text-rose-800';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition';
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 text-center font-bold text-gray-500">${item.no}</td>
+                    <td class="py-2.5 px-4 font-semibold text-gray-900">${item.title}</td>
+                    <td class="py-2.5 px-3 text-gray-600">${item.category}</td>
+                    <td class="py-2.5 px-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badge}">${item.status}</span></td>
+                    <td class="py-2.5 px-4 text-gray-600">${item.desc}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <button onclick="jumpToReport('sec-report-5')" class="text-sky-600 hover:underline font-bold text-[11px]">第5章 ➔</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Filter Logic
+        let currentCategory = 'all';
+        function filterScenarios(catKey) {
+            currentCategory = catKey;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const statusVal = document.getElementById('statusFilter').value;
+            const searchVal = document.getElementById('scenarioSearch').value.toLowerCase();
+
+            const filtered = scenarioData.filter(item => {
+                const matchCat = (currentCategory === 'all' || item.catKey === currentCategory);
+                const matchStatus = (statusVal === 'all' || item.status === statusVal || (statusVal === '完全違法' && item.status === '完全違法'));
+                const matchSearch = item.title.toLowerCase().includes(searchVal) || item.desc.toLowerCase().includes(searchVal);
+                return matchCat && matchStatus && matchSearch;
+            });
+            renderScenarios(filtered);
+        }
+
+        // Initialize Chart and View
+        window.addEventListener('DOMContentLoaded', () => {
+            renderScenarios(scenarioData);
+
+            // Chart.js: Drug Breakdown
+            const ctx = document.getElementById('drugClassificationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        '処方箋医薬品 (~13,000品目 / 処方箋必須)',
+                        '非処方箋医療用医薬品 (~7,000品目 / 2027年原則禁止)',
+                        'OTC・要指導医薬品 (~12,000品目 / 薬剤師外来対象)'
+                    ],
+                    datasets: [{
+                        data: [13000, 7000, 12000],
+                        backgroundColor: ['#E11D48', '#0284C7', '#94A3B8'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
